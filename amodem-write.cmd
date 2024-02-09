@@ -1,0 +1,1 @@
+amodem send -vv -i .\Moby_Dick_pt_12.txt -l C:\msys64\mingw64\bin\libportaudio.dll
