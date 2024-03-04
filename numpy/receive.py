@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot
 
 SAMPLE_RATE = 44100
-n_frames = 30
+n_frames = 360
 
 
 def round_by(b, n):
@@ -47,5 +47,5 @@ with wave.open('out.wav', 'r') as f:
     print(peaks)
 
     pyplot.plot(xf, yf)
-    # pyplot.xlim(0, 5000)
+    pyplot.xlim(0, 5000)
     pyplot.show()

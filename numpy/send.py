@@ -19,8 +19,9 @@ with wave.open('out.wav', 'w') as f:
     f.setnchannels(1) # mono
     f.setsampwidth(2) # 16-bit samples
     f.setframerate(SAMPLE_RATE)
+    freqs = [ 500 + 4500 * x / 17 for x in range(17) ]
+    n = len(freqs)
+    print(freqs)
     for t in range(int(LENGTH_MS * SAMPLE_RATE / 1000)):
-        freqs = [1000, 2000, 3000]
-        n = len(freqs)
         h = sum(sine(1/n, f, t) for f in freqs)
         f.writeframes(wav_sample(h))
