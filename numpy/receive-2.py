@@ -22,7 +22,25 @@ def read_bits(f):
             bits.append(0)
     return bits
 
-with wave.open('out.wav', 'r') as f:
-    f.readframes(1234) # intentional desync
+def bits_to_int(bits):
+    a = 0
+    for b in reversed(bits):
+        a *= 2
+        a += b and 1 or 0
+    return a
+
+with wave.open('cassette_out.wav', 'r') as f:
+    f.readframes(10) # intentional desync
     bits = read_bits(f)
-    print(bits)
+    stable = False
+    while True:
+        new_bits = read_bits(f)
+        if not stable and new_bits == bits:
+            stable = True
+            bits = new_bits
+            print(bits_to_int(bits))
+        if stable and new_bits == bits:
+            continue
+        if new_bits != bits:
+            bits = new_bits
+            stable = False
