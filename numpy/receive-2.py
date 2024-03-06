@@ -5,12 +5,14 @@ import numpy as np
 from matplotlib import pyplot
 
 SAMPLE_RATE = 44100
+FRAME_LENGTH = SAMPLE_RATE // 100
 
-FFT_WINDOW = 64
-BINS = [ 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 ]
-DATA = 8
-CONTROL = 8
-CLOCK = 9
+FFT_WINDOW = 30
+BINS = [ 3, 5, 7, 11, 13 ]
+DATA = 4
+CLOCK = -1
+
+FREQS = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
 
 def read_bits(f):
     samples = []
@@ -43,13 +45,11 @@ def recv_file(f):
         except:
             print()
             return
-        if new_bits[CONTROL] == 1:
-            continue
         if not stable and new_bits == bits:
             stable = True
             bits = new_bits
             num = bits_to_int(bits[:DATA])
-            print(chr(num), end='')
+            print(num, end=' ')
         if stable and new_bits == bits:
             # print('=', end='')
             continue
