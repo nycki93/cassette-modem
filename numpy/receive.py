@@ -17,6 +17,6 @@ with wave.open('out.wav', 'r') as f:
     yf = [ abs(h) for h in np.fft.rfft(samples) ]
     xf = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
 
-    pyplot.plot(xf, yf)
+    pyplot.scatter(xf, yf)
     pyplot.xlim(0, 12000)
     pyplot.show()

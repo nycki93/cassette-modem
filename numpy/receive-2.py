@@ -12,10 +12,9 @@ def read_bits(f):
     for sample, in struct.iter_unpack('<h', f.readframes(FFT_WINDOW)):
         samples.append(sample)
     yf = [ abs (h) for h in np.fft.rfft(samples) ]
-    xf = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
     cutoff = max(yf) / 2
     bits = []
-    for a in yf[1:11]:
+    for a in yf:
         if a > cutoff:
             bits.append(1)
         else:
@@ -29,17 +28,22 @@ def bits_to_int(bits):
         a += b and 1 or 0
     return a
 
-with wave.open('cassette_out.wav', 'r') as f:
-    f.readframes(10) # intentional desync
+with wave.open('cassette-modem-test.wav', 'r') as f:
+    f.readframes(10)
     bits = read_bits(f)
     stable = False
     while True:
-        new_bits = read_bits(f)
+        try:
+            new_bits = read_bits(f)
+        except:
+            exit(0)
         if not stable and new_bits == bits:
             stable = True
             bits = new_bits
-            print(bits_to_int(bits))
+            num = bits_to_int(bits[3:11])
+            print(chr(num), end='')
         if stable and new_bits == bits:
+            print('=', end='')
             continue
         if new_bits != bits:
             bits = new_bits

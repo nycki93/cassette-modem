@@ -5,10 +5,9 @@ import wave
 import numpy as np
 
 SAMPLE_RATE = 44100
-FRAME_LENGTH = SAMPLE_RATE // 300
+FRAME_LENGTH = SAMPLE_RATE // 100
 FFT_WINDOW = 42
-
-bins = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)[1:11]
+BINS = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
 
 def sine(amp, freq, t):
     return amp * math.sin(2 * math.pi * freq * t / SAMPLE_RATE)
@@ -18,7 +17,7 @@ def wav_sample(h):
 
 def int_to_freqs(a):
     result = []
-    for freq in bins:
+    for freq in BINS[3:11]:
         if a % 2: result.append(freq)
         a = a // 2
     return result
@@ -28,10 +27,13 @@ with wave.open('out.wav', 'w') as f:
     f.setsampwidth(2)
     f.setframerate(SAMPLE_RATE)
     
-    data = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]
+    data = "hello, world! lorem ipsum dolor sit amet."
 
-    for d in data:
+    for i, d in enumerate(np.array([data]).view(int)):
+        print(d, end=' ')
         freqs = int_to_freqs(d)
+        if (i % 2 == 0):
+            freqs = [ *freqs, BINS[2]] # clock
         for t in range(FRAME_LENGTH):
             h = sum(sine(0.1, f, t) for f in freqs)
             f.writeframes(wav_sample(h))
