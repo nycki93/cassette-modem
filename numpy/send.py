@@ -6,6 +6,8 @@ SAMPLE_RATE = 44100
 LENGTH_MS = 5000
 FREQ_A = 440
 
+BINS = [ 1378, 4134, 6891, 9647 ]
+
 def sine(amplitude, frequency, t):
     return amplitude * math.sin(2 * math.pi * frequency * t / SAMPLE_RATE)
 
@@ -19,8 +21,8 @@ with wave.open('out.wav', 'w') as f:
     f.setnchannels(1) # mono
     f.setsampwidth(2) # 16-bit samples
     f.setframerate(SAMPLE_RATE)
-    freqs = [ 1050, 3150, 4200, 5250, 7350, 9450, 10500 ]
-    n = len(freqs)
+    freqs = BINS
+    n = len(BINS)
     print(freqs)
     for t in range(int(LENGTH_MS * SAMPLE_RATE / 1000)):
         h = sum(sine(1/n, f, t) for f in freqs)
