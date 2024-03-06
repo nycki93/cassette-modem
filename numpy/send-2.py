@@ -8,12 +8,22 @@ SAMPLE_RATE = 44100
 FRAME_LENGTH = SAMPLE_RATE // 100
 
 FFT_WINDOW = 64
-BINS = [ 4, 6, 8, 10, 12, 14, 16, 18, 20, 22 ]
+BINS = [ 2 * i + 4 for i in range(10) ]
 DATA = 8
 CONTROL = 8
 CLOCK = 9
 
+TUNING_A = 440
+
+def note(n):
+    return TUNING_A * 2 ** (n / 12)
+
 FREQS = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
+# NOTES = [ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 ]
+# FREQS = [ 
+#     1300, 3100, 5300, 7300, 9300, 
+#     11300, 13300, 15100, 17300, 19300,
+# ]
 
 def sine(amp, freq, t):
     return amp * math.sin(2 * math.pi * freq * t / SAMPLE_RATE)
@@ -32,6 +42,11 @@ with wave.open('out.wav', 'w') as f:
     f.setnchannels(1)
     f.setsampwidth(2)
     f.setframerate(SAMPLE_RATE)
+
+    for t in range(FRAME_LENGTH):
+        freqs = [FREQS[i] for i in BINS]
+        h = sum(sine(1 / len(BINS), f, t) for f in freqs)
+        f.writeframes(wav_sample(h))
     
     data = [ 
         "Hello, World! lorem ipsum dolor sit amet."
