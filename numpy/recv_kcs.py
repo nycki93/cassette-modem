@@ -10,11 +10,11 @@ MARK = 2400
 SPACE = 1200
 
 FFT_WINDOW = FRAME_LENGTH // 5
+SILENCE_THRESHOLD = 0.01
 
 def nearest_index(array, value):
     diffs = [abs(a - value) for a in array]
     return diffs.index(min(diffs))
-    
 
 BINS = np.fft.rfftfreq(FFT_WINDOW, 1 / SAMPLE_RATE)
 MARK_BIN = nearest_index(BINS, MARK)
@@ -24,8 +24,7 @@ def read_bit(frames):
     samples = []
     for sample, in struct.iter_unpack('<h', frames):
         samples.append(sample / (2 ** 15 - 1))
-    if max(samples) < 0.1:
-        # silence
+    if max(samples) < SILENCE_THRESHOLD:
         return -1
     yf = [ abs(h) for h in np.fft.rfft(samples) ]
     i = yf.index(max(yf))

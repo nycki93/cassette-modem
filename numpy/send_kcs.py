@@ -27,8 +27,8 @@ def bit_stream(data):
     for d in data:
         yield from pad_byte(ord(d))
 
-def main():
-    with wave.open('out.wav', 'w') as f:
+def send(file_out):
+    with wave.open(file_out, 'w') as f:
         f.setnchannels(1)
         f.setsampwidth(2)
         f.setframerate(SAMPLE_RATE)
@@ -38,4 +38,4 @@ def main():
                 f.writeframes(wav_sample(h))
 
 if __name__ == '__main__':
-    main()
+    send('out.wav')
