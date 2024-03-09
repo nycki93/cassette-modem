@@ -25,6 +25,7 @@ def pad_byte(n):
 def bit_stream(data):
     yield from [1, 1]
     for d in data:
+        print(d)
         yield from pad_byte(ord(d))
 
 def send(file_out):
