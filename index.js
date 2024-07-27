@@ -1,8 +1,6 @@
 function main() {
     // Not allowed to get microphone before first user input.
-    const mainDiv = document.getElementById('main');
-    mainDiv.innerHTML += '<button id="start">start</button>'
-    const startButton = document.getElementById('start');
+    const startButton = document.getElementById('startButton');
     startButton.onclick = start;
 }
 
@@ -12,10 +10,22 @@ async function start() {
     const micNode = audioContext.createMediaStreamSource(stream);
     await audioContext.audioWorklet.addModule('worklet-decoder.js');
     const decoder = new AudioWorkletNode(audioContext, 'worklet-decoder');
+
+    const textarea = document.getElementById('textarea');
+    decoder.port.onmessage = (ev) => {
+        const byte = ev.data;
+        let char = '.';
+        if (byte == 0x0a) {
+            char = '\n';
+        } else if (byte >= 0x20 && byte < 0x7f) {
+            char = String.fromCharCode(byte);
+        }
+        textarea.value += char;
+    }
+    
     micNode.connect(decoder);
-    decoder.port.onmessage = (ev) => console.log(ev.data);
-    await new Promise(r => setTimeout(r, 5_000));
-    micNode.disconnect(decoder);
+    // await new Promise(r => setTimeout(r, 5_000));
+    // micNode.disconnect(decoder);
 }
 
 main();
