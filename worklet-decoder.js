@@ -85,50 +85,49 @@ class WorkletDecoder extends AudioWorkletProcessor {
         }
     }
 
-    /** @param {Generator<number>} wavelengths  */
-    async * getBits(wavelengths) {
-        let oneCount = 0;
-        let zeroCount = 0;
+    /** @param {AsyncGenerator<number>} wavelengths  */
+    async * getBytes(wavelengths) {
+        const threshold = ZERO_FRAMES - 2;
+        let waveCount = 0;
+        let longCount = 0;
+        let bitCount = 0;
+        let byteValue = 0;
+        let idle = true;
         for await (const wl of wavelengths) {
-            if (wl < THRESHOLD) {
-                oneCount += 1;
-                zeroCount = 0;
-            } else {
-                zeroCount += 1;
-                oneCount = 0;
-            }
-            if (oneCount >= ONE_PULSES) {
-                yield 1;
-                oneCount = 0;
-            }
-            if (zeroCount >= ZERO_PULSES) {
-                yield 0;
-                zeroCount = 0;
-            }
-        }
-    }
+            waveCount += 1;
+            longCount += (wl >= threshold);
 
-    /** @param {Generator<number>} bitstream  */
-    async * getBytes(bitstream) {
-        let bits = [];
-        let isIdle = true;
-        for await (const bit of bitstream) {
-            // wait for sync bit
-            if (isIdle) {
-                isIdle = (bit == 1);
+            if (idle) {
+                // wait for leading zero
+                if (wl < threshold) {
+                    longCount = 0;
+                }
+                if (longCount == ZERO_PULSES) {
+                    waveCount = 0;
+                    longCount = 0;
+                    idle = false;
+                }
                 continue;
             }
+            
+            let bit = undefined;
+            if (longCount == 4) {
+                bit = 0;
+            } else if (waveCount == 8) {
+                bit = 1;
+            }
 
-            bits.push(bit);
+            if (bit !== undefined) {
+                byteValue = (byteValue >> 1) + (bit << 7);
+                bitCount += 1;
+                longCount = 0;
+                waveCount = 0;
+            }
 
-            if (bits.length == 8) {
-                let byte = 0;
-                for (const b of bits.reverse()) {
-                    byte = byte * 2 + b;
-                }
-                yield byte;
-                bits = [];
-                isIdle = true;
+            if (bitCount === 8) {
+                yield byteValue;
+                bitCount = 0;
+                idle = true;
             }
         }
     }
@@ -136,11 +135,7 @@ class WorkletDecoder extends AudioWorkletProcessor {
     async startAsync() {
         const samples = this.getSamples();
         const wavelengths = this.getWavelengths(samples);
-        const bitstream = this.getBits(wavelengths);
-        // for await (const bit of bitstream) {
-        //     this.port.postMessage(bit.toString().charCodeAt(0));
-        // }
-        const bytes = this.getBytes(bitstream);
+        const bytes = this.getBytes(wavelengths);
         for await (const byte of bytes) {
             this.port.postMessage(byte);
         }
