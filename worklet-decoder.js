@@ -74,8 +74,9 @@ class WorkletDecoder extends AudioWorkletProcessor {
         let prevIsNegative = false;
         let wavelength = 0;
         for await (const sample of samples) {
-            const isNegative = sample < 0;
             wavelength += 1;
+            if (Math.abs(sample) < 0.001) continue;
+            const isNegative = sample < 0;
             if (!prevIsNegative && isNegative) {
                 // falling edge detected
                 yield wavelength;
@@ -87,44 +88,31 @@ class WorkletDecoder extends AudioWorkletProcessor {
 
     /** @param {AsyncGenerator<number>} wavelengths  */
     async * getBytes(wavelengths) {
-        const threshold = ZERO_FRAMES * 0.95;
+        const idleThreshold = ONE_FRAMES * 1.5;
         let waveCount = 0;
-        let longCount = 0;
+        let totalLength = 0;
+        let targetLength = ZERO_FRAMES * ZERO_PULSES * 0.95;
+        let idle = true;
         let bitCount = 0;
         let byteValue = 0;
-        let idle = true;
         for await (const wl of wavelengths) {
-            waveCount += 1;
-            longCount += (wl >= threshold);
-
-            if (idle) {
-                // wait for leading zero
-                if (wl < threshold) {
-                    longCount = 0;
-                }
-                if (longCount == ZERO_PULSES) {
-                    waveCount = 0;
-                    longCount = 0;
-                    idle = false;
-                }
-                continue;
-            }
+            // wait for leading zero
+            idle = idle && wl < idleThreshold;
+            if (idle) continue;
             
-            let bit = undefined;
-            if (longCount == 4) {
-                bit = 0;
-            } else if (waveCount == 8) {
-                bit = 1;
-            }
+            // build a bit
+            waveCount += 1;
+            totalLength += wl;
+            if (totalLength < targetLength) continue;
 
-            if (bit !== undefined) {
-                byteValue = (byteValue >> 1) + (bit << 7);
-                bitCount += 1;
-                longCount = 0;
-                waveCount = 0;
-            }
+            const bit = (waveCount > ZERO_PULSES * 1.5) ? 1 : 0;
+            bitCount += 1;
+            waveCount = 0;
+            totalLength = 0;
 
-            if (bitCount === 8) {
+            // build a byte
+            byteValue = (byteValue >> 1) + (bit << 7);
+            if (bitCount === 9) {
                 yield byteValue;
                 bitCount = 0;
                 idle = true;
