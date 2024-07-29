@@ -6,7 +6,9 @@ function main() {
 
 async function start() {
     const audioContext = new AudioContext();
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: {
+        echoCancellation: false,
+    } });
     const micNode = audioContext.createMediaStreamSource(stream);
     await audioContext.audioWorklet.addModule('worklet-decoder.js');
     const decoder = new AudioWorkletNode(audioContext, 'worklet-decoder');

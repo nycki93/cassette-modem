@@ -87,7 +87,7 @@ class WorkletDecoder extends AudioWorkletProcessor {
 
     /** @param {AsyncGenerator<number>} wavelengths  */
     async * getBytes(wavelengths) {
-        const threshold = ZERO_FRAMES - 2;
+        const threshold = ZERO_FRAMES * 0.95;
         let waveCount = 0;
         let longCount = 0;
         let bitCount = 0;
