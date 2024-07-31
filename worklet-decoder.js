@@ -5,7 +5,7 @@ const ZERO_FRAMES = SAMPLE_RATE / 1200;
 const ZERO_PULSES = 4;
 const ONE_FRAMES = SAMPLE_RATE / 2400;
 const ONE_PULSES = 8;
-const THRESHOLD = (ZERO_FRAMES + ONE_FRAMES) / 2;
+const THRESHOLD = ONE_FRAMES * 1.5;
 
 /** @template T */
 class AsyncQueue {
@@ -71,44 +71,68 @@ class WorkletDecoder extends AudioWorkletProcessor {
      * @returns the time between falling edges, as number of samples
      */
     async * getWavelengths(samples) {
-        let prevIsNegative = false;
+        let isPositive = false;
         let wavelength = 0;
+        let highTime = 0;
+        let lowTime = 0;
         for await (const sample of samples) {
             wavelength += 1;
-            if (Math.abs(sample) < 0.001) continue;
-            const isNegative = sample < 0;
-            if (!prevIsNegative && isNegative) {
+            if (sample > 0) {
+                lowTime = 0;
+                highTime += 1;
+            } else {
+                lowTime += 1;
+                highTime = 0;
+            }
+            if (!isPositive && highTime >= 4) {
+                isPositive = true;
+            }
+            if (isPositive && lowTime >= 4) {
+                isPositive = false;
                 // falling edge detected
                 yield wavelength;
+                if (wavelength < 12) {
+                    // but its really short?
+                    console.log(`short wave detected: ${wavelength}`);
+                } else if (wavelength > 80) {
+                    // but its really long?
+                    console.log(`long wave detected: ${wavelength}`);
+                }
                 wavelength = 0;
             }
-            prevIsNegative = isNegative;
         }
     }
 
     /** @param {AsyncGenerator<number>} wavelengths  */
     async * getBytes(wavelengths) {
-        const idleThreshold = ONE_FRAMES * 1.5;
         let waveCount = 0;
-        let totalLength = 0;
-        let targetLength = ZERO_FRAMES * ZERO_PULSES * 0.95;
         let idle = true;
         let bitCount = 0;
         let byteValue = 0;
+        let waves = [];
+        let longCount = 0;
         for await (const wl of wavelengths) {
             // wait for leading zero
-            idle = idle && wl < idleThreshold;
+            idle = idle && wl < THRESHOLD;
             if (idle) continue;
             
             // build a bit
             waveCount += 1;
-            totalLength += wl;
-            if (totalLength < targetLength) continue;
-
-            const bit = (waveCount > ZERO_PULSES * 1.5) ? 1 : 0;
+            if (wl >= THRESHOLD) {
+                longCount += 1;
+            }
+            waves.push(wl);
+            let bit;
+            if (waveCount == 8) {
+                bit = 1;
+            } else if (waveCount == 4 && longCount >= 2) {
+                bit = 0;
+            } else {
+                continue;
+            }
             bitCount += 1;
             waveCount = 0;
-            totalLength = 0;
+            longCount = 0;
 
             // build a byte
             byteValue = (byteValue >> 1) + (bit << 7);
@@ -116,6 +140,14 @@ class WorkletDecoder extends AudioWorkletProcessor {
                 yield byteValue;
                 bitCount = 0;
                 idle = true;
+                if (
+                    byteValue != 0x0a && 
+                    (byteValue < 0x20 || byteValue > 0x7f)
+                ) {
+                    console.log(`weird byte: ${byteValue} (threshold: ${THRESHOLD})`);
+                    console.log(waves);
+                }
+                waves = [];
             }
         }
     }
