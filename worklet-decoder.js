@@ -91,13 +91,6 @@ class WorkletDecoder extends AudioWorkletProcessor {
                 isPositive = false;
                 // falling edge detected
                 yield wavelength;
-                if (wavelength < 12) {
-                    // but its really short?
-                    console.log(`short wave detected: ${wavelength}`);
-                } else if (wavelength > 80) {
-                    // but its really long?
-                    console.log(`long wave detected: ${wavelength}`);
-                }
                 wavelength = 0;
             }
         }
@@ -105,12 +98,14 @@ class WorkletDecoder extends AudioWorkletProcessor {
 
     /** @param {AsyncGenerator<number>} wavelengths  */
     async * getBytes(wavelengths) {
-        let waveCount = 0;
         let idle = true;
+        let waveCount = 0;
+        let longCount = 0;
         let bitCount = 0;
         let byteValue = 0;
-        let waves = [];
-        let longCount = 0;
+        let totalBytes = 0;
+        let streak = 0;
+        let numStreaks = 1;
         for await (const wl of wavelengths) {
             // wait for leading zero
             idle = idle && wl < THRESHOLD;
@@ -121,7 +116,6 @@ class WorkletDecoder extends AudioWorkletProcessor {
             if (wl >= THRESHOLD) {
                 longCount += 1;
             }
-            waves.push(wl);
             let bit;
             if (waveCount == 8) {
                 bit = 1;
@@ -140,14 +134,20 @@ class WorkletDecoder extends AudioWorkletProcessor {
                 yield byteValue;
                 bitCount = 0;
                 idle = true;
+                totalBytes += 1;
                 if (
-                    byteValue != 0x0a && 
-                    (byteValue < 0x20 || byteValue > 0x7f)
+                    streak > 16
+                    && byteValue != 0x0a
+                    && (byteValue < 0x20 || byteValue > 0x7f)
                 ) {
-                    console.log(`weird byte: ${byteValue} (threshold: ${THRESHOLD})`);
-                    console.log(waves);
+                    console.log(`weird byte: ${byteValue}`);
+                    console.log(`streak: ${streak}`);
+                    console.log(`average: ${totalBytes / numStreaks}`);
+                    numStreaks += 1;
+                    streak = 0;
+                } else {
+                    streak += 1;
                 }
-                waves = [];
             }
         }
     }
