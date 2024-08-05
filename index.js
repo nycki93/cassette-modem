@@ -1,18 +1,51 @@
+let isTransmitting = false;
+let txStopCallback = () => {};
 let isReceiving = false;
 let rxStopCallback = () => {};
 
 function main() {
     document.getElementById('tx-start').onclick = txStart;
     document.getElementById('tx-stop').onclick = txStop;
+    document.getElementById('tx-stop').disabled = true;
     document.getElementById('rx-start').onclick = rxStart;
     document.getElementById('rx-stop').onclick = rxStop;
     document.getElementById('rx-stop').disabled = true;
     document.getElementById('rx-clear').onclick = rxClear;
 }
 
-function txStart() { }
+async function txStart() { 
+    if (isTransmitting) return;
 
-function txStop() { }
+    const txText = document.getElementById('tx-textarea');
+    const rxText = document.getElementById('rx-textarea');
+    let stopTransmitting = false;
+
+    isTransmitting = true;
+    document.getElementById('tx-start').disabled = true;
+    document.getElementById('tx-stop').disabled = false;
+    txStopCallback = () => stopTransmitting = true;
+
+    let index = 0;
+    rxText.value = '';
+    while (index < txText.value.length) {
+        const chunk = txText.value.slice(index, index + 128);
+        index += chunk.length;
+        rxText.value += chunk;
+
+        // TODO: actually transmit something
+        
+        await new Promise(r => setTimeout(r, 200));
+        if (stopTransmitting) break;
+    }
+
+    document.getElementById('tx-start').disabled = false;
+    document.getElementById('tx-stop').disabled = true;
+    isTransmitting = false;
+}
+
+function txStop() { 
+    txStopCallback();
+}
 
 async function rxStart() {
     if (isReceiving) return;
