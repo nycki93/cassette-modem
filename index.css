@@ -1,0 +1,13 @@
+:root {
+    color-scheme: dark;
+    margin: auto;
+    padding: 0 2ch;
+    max-width: 120ch;
+    font-family: sans-serif;
+}
+
+textarea {
+    width: 100%;
+    height: 10lh;
+    margin-top: 2ch;
+}

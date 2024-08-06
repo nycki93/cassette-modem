@@ -5,6 +5,7 @@ import { extname } from 'node:path';
 const contentType = {
     '.html': 'text/html',
     '.js': 'text/javascript',
+    '.css': 'text/css',
 };
 
 const server = http.createServer((req, res) => {
