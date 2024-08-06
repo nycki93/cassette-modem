@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="utf-8">
-<title>microphone test</title>
+<title>js-kcs</title>
 <script type="module" src="index.js"></script>
+
+<h1>js-kcs</h1>
+<p>current status: can transmit a single square wave, can receive bytes produced by py-kcs.</p>
+
+<h2>transmit</h2>
 <div>
-    <h2>transmit</h2>
-    <div>
-        <button id="tx-start">start</button>
-        <button id="tx-stop">stop</button>
-    </div>
-    <textarea id="tx-textarea" rows="20" cols="150"></textarea>
+    <button id="tx-start">start</button>
+    <button id="tx-stop">stop</button>
 </div>
+<textarea id="tx-textarea" rows="20" cols="150"></textarea>
+
+<h2>receive</h2>
 <div>
-    <h2>receive</h2>
-    <div>
-        <button id="rx-start">start</button>
-        <button id="rx-stop">stop</button>
-        <button id="rx-clear">clear</button>
-    </div>
-    <textarea id="rx-textarea" rows="20" cols="150"></textarea>
+    <button id="rx-start">start</button>
+    <button id="rx-stop">stop</button>
+    <button id="rx-clear">clear</button>
 </div>
+<textarea id="rx-textarea" rows="20" cols="150"></textarea>
