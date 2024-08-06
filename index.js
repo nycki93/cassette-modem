@@ -21,6 +21,7 @@ async function txStart() {
     const encoder = new AudioWorkletNode(audioContext, 'worklet-encoder');
     encoder.connect(audioContext.destination);
     document.getElementById('tx-start').disabled = true;
+    document.getElementById('rx-start').disabled = true;
     document.getElementById('tx-stop').disabled = false;
     isTransmitting = true;
 
@@ -28,6 +29,7 @@ async function txStart() {
         encoder.disconnect(audioContext.destination);
         encoder.port.onmessage = undefined;
         document.getElementById('tx-start').disabled = false;
+        document.getElementById('rx-start').disabled = false;
         document.getElementById('tx-stop').disabled = true;
         isTransmitting = false;
     }
@@ -39,10 +41,11 @@ async function txStart() {
     rxText.value = '';
     encoder.port.onmessage = (ev) => {
         const { data } = ev;
-        if (data.char) {
-            rxText.value += data.char;
+        if (data.text) {
+            rxText.value += data.text;
         }
         if (data.done) {
+            rxText.value += '\n\ndone!';
             txStopCallback();
         }
     };
@@ -76,16 +79,20 @@ async function rxStart() {
     
     isReceiving = true;
     document.getElementById('rx-start').disabled = true;
+    document.getElementById('tx-start').disabled = true;
     document.getElementById('rx-stop').disabled = false;
     micNode.connect(decoder);
-    rxStopCallback = () => micNode.disconnect(decoder);
+    rxStopCallback = () => {
+        micNode.disconnect(decoder);
+        isReceiving = false;
+        document.getElementById('rx-start').disabled = false;
+        document.getElementById('tx-start').disabled = false;
+        document.getElementById('rx-stop').disabled = true;
+    }
 }
 
 function rxStop() { 
     rxStopCallback();
-    isReceiving = false;
-    document.getElementById('rx-start').disabled = false;
-    document.getElementById('rx-stop').disabled = true;
 }
 
 function rxClear() {

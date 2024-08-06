@@ -23,10 +23,18 @@ class WorkletEncoder extends AudioWorkletProcessor {
     constructor() {
         super();
         this.port.onmessage = (ev) => {
+            if (!ev.data) {
+                this.port.postMessage({ done: true });
+                return;
+            }
+
             this.data += ev.data;
-            // write ten seconds of 1s to mark the start of the message
-            this.buffer = this.buffer.concat(squareWave(1.0, 2400, 2400 * 10))
-            this.started = true;
+
+            if (!this.started) {
+                this.buffer = this.buffer.concat(squareWave(1.0, 2400, 2400 * 10))
+                this.port.postMessage({ text: 'syncing for 10 seconds, please wait...\n\n' });
+                this.started = true;
+            }
         }
     }
 
@@ -62,9 +70,9 @@ class WorkletEncoder extends AudioWorkletProcessor {
         const output = outputs[0];
         const length = output[0].length;
         while (this.buffer.length < length) {
-            const char = this.encodeChar();
-            if (char) {
-                this.port.postMessage({ char });
+            const text = this.encodeChar();
+            if (text) {
+                this.port.postMessage({ text });
             } else {
                 this.port.postMessage({ done: true });
                 break;
