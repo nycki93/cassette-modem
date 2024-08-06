@@ -19,12 +19,20 @@
     <button id="tx-start">start</button>
     <button id="tx-stop">stop</button>
 </div>
-<textarea id="tx-textarea"></textarea>
+<textarea id="tx-outgoing"></textarea>
+<textarea id="tx-echo"></textarea>
 
 <h2>receive</h2>
 <div>
     <button id="rx-start">start</button>
     <button id="rx-stop">stop</button>
     <button id="rx-clear">clear</button>
+    <label>
+        Input Source
+        <select id="rx-select">
+            <option value="default">default</option>
+        </select>
+    </label>
+    <button id="rx-refresh-options">refresh options</button>
 </div>
-<textarea id="rx-textarea"></textarea>
+<textarea id="rx-incoming"></textarea>
