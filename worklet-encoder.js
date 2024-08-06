@@ -24,6 +24,8 @@ class WorkletEncoder extends AudioWorkletProcessor {
         super();
         this.port.onmessage = (ev) => {
             this.data += ev.data;
+            // write ten seconds of 1s to mark the start of the message
+            this.buffer = this.buffer.concat(squareWave(1.0, 2400, 2400 * 10))
             this.started = true;
         }
     }
@@ -38,6 +40,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
         for (let i = 0; i < 8; i += 1) {
             bits.push((byte & (1 << i)) ? 1 : 0);
         }
+        bits.push(1);
         bits.push(1);
         
         const samples = bits.flatMap((bit) => {
@@ -55,7 +58,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
         if (!this.started) {
             return true;
         }
-        
+
         const output = outputs[0];
         const length = output[0].length;
         while (this.buffer.length < length) {
