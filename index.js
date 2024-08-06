@@ -20,36 +20,32 @@ async function txStart() {
     await audioContext.audioWorklet.addModule('worklet-encoder.js');
     const encoder = new AudioWorkletNode(audioContext, 'worklet-encoder');
     encoder.connect(audioContext.destination);
-
-    const txText = document.getElementById('tx-textarea');
-    const rxText = document.getElementById('rx-textarea');
-    let stopTransmitting = false;
-
-    isTransmitting = true;
     document.getElementById('tx-start').disabled = true;
     document.getElementById('tx-stop').disabled = false;
+    isTransmitting = true;
+
     txStopCallback = () => {
-        stopTransmitting = true;
         encoder.disconnect(audioContext.destination);
+        encoder.port.onmessage = undefined;
         document.getElementById('tx-start').disabled = false;
         document.getElementById('tx-stop').disabled = true;
         isTransmitting = false;
     }
 
-    // let index = 0;
-    // rxText.value = '';
-    // while (index < txText.value.length) {
-    //     const chunk = txText.value.slice(index, index + 128);
-    //     index += chunk.length;
-    //     rxText.value += chunk;
+    const txText = document.getElementById('tx-textarea');
+    encoder.port.postMessage(txText.value);
 
-    //     // TODO: actually transmit something
-        
-    //     await new Promise(r => setTimeout(r, 200));
-    //     if (stopTransmitting) break;
-    // }
-
-
+    const rxText = document.getElementById('rx-textarea');
+    rxText.value = '';
+    encoder.port.onmessage = (ev) => {
+        const { data } = ev;
+        if (data.char) {
+            rxText.value += data.char;
+        }
+        if (data.done) {
+            txStopCallback();
+        }
+    };
 }
 
 function txStop() { 

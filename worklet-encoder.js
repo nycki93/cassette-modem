@@ -16,8 +16,17 @@ function squareWave(amplitude, frequency, pulses=1) {
 }
 
 class WorkletEncoder extends AudioWorkletProcessor {
-    data = 'hello world';
+    data = '';
     buffer = [];
+    started = false;
+
+    constructor() {
+        super();
+        this.port.onmessage = (ev) => {
+            this.data += ev.data;
+            this.started = true;
+        }
+    }
 
     encodeChar() {
         if (this.data.length === 0) return;
@@ -43,6 +52,10 @@ class WorkletEncoder extends AudioWorkletProcessor {
     }
     
     process(_inputs, outputs) {
+        if (!this.started) {
+            return true;
+        }
+        
         const output = outputs[0];
         const length = output[0].length;
         while (this.buffer.length < length) {
