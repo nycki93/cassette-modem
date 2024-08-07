@@ -31,7 +31,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
             this.data += ev.data;
 
             if (!this.started) {
-                this.buffer = this.buffer.concat(squareWave(1.0, 2400, 2400 * 10))
+                this.buffer = this.buffer.concat(squareWave(0.5, 2400, 2400 * 10))
                 this.port.postMessage({ text: 'syncing for 10 seconds, please wait...\n\n' });
                 this.started = true;
             }
@@ -53,9 +53,9 @@ class WorkletEncoder extends AudioWorkletProcessor {
         
         const samples = bits.flatMap((bit) => {
             if (bit) {
-                return squareWave(1.0, 2400, 8);
+                return squareWave(0.5, 2400, 8);
             } else {
-                return squareWave(1.0, 1200, 4);
+                return squareWave(0.5, 1200, 4);
             }
         })
         this.buffer = this.buffer.concat(samples);
@@ -74,6 +74,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
             if (text) {
                 this.port.postMessage({ text });
             } else {
+                this.port.postMessage({ text: '\n\nEOF' });
                 this.port.postMessage({ done: true });
                 break;
             }

@@ -46,9 +46,9 @@ async function txStart() {
         const { data } = ev;
         if (data.text) {
             txEcho.value += data.text;
+            txEcho.scrollTop = txEcho.scrollHeight;
         }
         if (data.done) {
-            txEcho.value += '\n\ndone!';
             txStopCallback();
         }
     };
@@ -84,6 +84,7 @@ async function rxStart() {
             char = String.fromCharCode(byte);
         }
         rxText.value += char;
+        rxText.scrollTop = rxText.scrollHeight;
     }
     
     isReceiving = true;
