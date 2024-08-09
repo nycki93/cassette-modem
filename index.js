@@ -3,6 +3,7 @@ let txStopCallback = () => {};
 let isReceiving = false;
 let rxStopCallback = () => {};
 let inputOptions = {};
+/** @type {MediaStream | null} */
 let micStream = null;
 
 function main() {
@@ -62,15 +63,22 @@ async function rxStart() {
     if (isReceiving) return;
 
     const rxSelect = document.getElementById('rx-select');
-    const deviceId = rxSelect.value;
+    if (micStream == null) {
+        await updateInputOptions();
+    }
     micStream = await navigator.mediaDevices.getUserMedia({ audio: {
         echoCancellation: false,
-        deviceId,
+        deviceId: rxSelect.value,
     }});
+    rxSelect.value = micStream.getAudioTracks()[0].getSettings().deviceId;
 
     const audioContext = new AudioContext();
-    await updateInputOptions();
     const micNode = audioContext.createMediaStreamSource(micStream);
+    // const filterNode = new BiquadFilterNode(audioContext, {
+    //     type: 'highpass',
+    //     frequency: '600',
+    // });
+    // micNode.connect(filterNode);
     await audioContext.audioWorklet.addModule('worklet-decoder.js');
     const decoder = new AudioWorkletNode(audioContext, 'worklet-decoder');
 
@@ -91,6 +99,7 @@ async function rxStart() {
     document.getElementById('rx-start').disabled = true;
     document.getElementById('tx-start').disabled = true;
     document.getElementById('rx-stop').disabled = false;
+    rxSelect.disabled = true;
     micNode.connect(decoder);
     rxStopCallback = () => {
         micNode.disconnect(decoder);
@@ -98,6 +107,7 @@ async function rxStart() {
         document.getElementById('rx-start').disabled = false;
         document.getElementById('tx-start').disabled = false;
         document.getElementById('rx-stop').disabled = true;
+        rxSelect.disabled = false;
     }
 }
 
