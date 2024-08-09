@@ -15,6 +15,25 @@ function squareWave(amplitude, frequency, pulses=1) {
     return samples;
 }
 
+function sineWave(amplitude, frequency, pulses=1) {
+    const samples = /** @type {number[]} */ ([]);
+    const wavelength = SAMPLE_RATE / frequency;
+    for (let i = 0; i < pulses; i += 1) {
+        for (let j = 0; j < wavelength; j += 1) {
+            samples.push(amplitude * Math.sin(2 * Math.PI * j / wavelength));
+        }
+    }
+    return samples;
+}
+
+function mark(n=1) {
+    return sineWave(1.0, 2400, 8 * n);
+}
+
+function space(n=1) {
+    return sineWave(1.0, 1200, 4 * n);
+}
+
 class WorkletEncoder extends AudioWorkletProcessor {
     data = '';
     buffer = [];
@@ -23,16 +42,23 @@ class WorkletEncoder extends AudioWorkletProcessor {
     constructor() {
         super();
         this.port.onmessage = (ev) => {
-            if (!ev.data) {
+            const message = ev.data;
+            if ('data' in message) {
+                this.data += message.data;
+            }
+            
+            if ('mode' in message) {
+                console.log(message.mode);
+            }
+
+            if (!this.started && !this.data) {
                 this.port.postMessage({ done: true });
                 return;
             }
 
-            this.data += ev.data;
-
             if (!this.started) {
-                this.buffer = this.buffer.concat(squareWave(0.5, 2400, 2400 * 10))
-                this.port.postMessage({ text: 'syncing for 10 seconds, please wait...\n\n' });
+                this.buffer = this.buffer.concat(mark(300 * 10));
+                this.port.postMessage({ text: 'sending calibration tone for 10 seconds, you may now start recording.\n\n' });
                 this.started = true;
             }
         }
@@ -51,13 +77,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
         bits.push(1);
         bits.push(1);
         
-        const samples = bits.flatMap((bit) => {
-            if (bit) {
-                return squareWave(0.5, 2400, 8);
-            } else {
-                return squareWave(0.5, 1200, 4);
-            }
-        })
+        const samples = bits.flatMap((bit) => bit ? mark() : space());
         this.buffer = this.buffer.concat(samples);
         return char;
     }

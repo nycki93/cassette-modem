@@ -23,6 +23,11 @@ async function txStart() {
     const audioContext = new AudioContext();
     await audioContext.audioWorklet.addModule('worklet-encoder.js');
     const encoder = new AudioWorkletNode(audioContext, 'worklet-encoder');
+
+    const txText = document.getElementById('tx-outgoing');
+    encoder.port.postMessage({ data: txText.value });
+    encoder.port.postMessage({ mode: 0 });
+
     encoder.connect(audioContext.destination);
     document.getElementById('tx-start').disabled = true;
     document.getElementById('rx-start').disabled = true;
@@ -37,9 +42,6 @@ async function txStart() {
         document.getElementById('tx-stop').disabled = true;
         isTransmitting = false;
     }
-
-    const txText = document.getElementById('tx-outgoing');
-    encoder.port.postMessage(txText.value);
 
     const txEcho = document.getElementById('tx-echo');
     txEcho.value = '';
@@ -74,11 +76,11 @@ async function rxStart() {
 
     const audioContext = new AudioContext();
     const micNode = audioContext.createMediaStreamSource(micStream);
-    // const filterNode = new BiquadFilterNode(audioContext, {
-    //     type: 'highpass',
-    //     frequency: '600',
-    // });
-    // micNode.connect(filterNode);
+    const filterNode = new BiquadFilterNode(audioContext, {
+        type: 'highpass',
+        frequency: '800',
+    });
+    micNode.connect(filterNode);
     await audioContext.audioWorklet.addModule('worklet-decoder.js');
     const decoder = new AudioWorkletNode(audioContext, 'worklet-decoder');
 
@@ -100,9 +102,11 @@ async function rxStart() {
     document.getElementById('tx-start').disabled = true;
     document.getElementById('rx-stop').disabled = false;
     rxSelect.disabled = true;
-    micNode.connect(decoder);
+    filterNode.connect(decoder);
+    // micNode.connect(decoder);
     rxStopCallback = () => {
-        micNode.disconnect(decoder);
+        filterNode.disconnect(decoder);
+        // micNode.disconnect(decoder);
         isReceiving = false;
         document.getElementById('rx-start').disabled = false;
         document.getElementById('tx-start').disabled = false;
