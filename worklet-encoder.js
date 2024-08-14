@@ -26,29 +26,30 @@ function sineWave(amplitude, frequency, pulses=1) {
     return samples;
 }
 
-function mark(n=1) {
-    return sineWave(1.0, 2400, 8 * n);
-}
-
-function space(n=1) {
-    return sineWave(1.0, 1200, 4 * n);
-}
-
 class WorkletEncoder extends AudioWorkletProcessor {
     data = '';
     buffer = [];
     started = false;
+    pitch = 2400;
+    mark = () => {};
+    space = () => {};
 
     constructor() {
         super();
         this.port.onmessage = (ev) => {
             const message = ev.data;
-            if ('data' in message) {
+            if (message.data) {
                 this.data += message.data;
             }
+
+            if (message.baudmode === 'kcs-300') {
+                this.mark = (n) => sineWave(1.0, this.pitch, 8 * n);
+                this.space = (n) => sineWave(1.0, this.pitch / 2, 4 * n);
+            }
             
-            if ('mode' in message) {
-                console.log(message.mode);
+            if (message.baudmode === 'kcs-1200') {
+                this.mark = (n) => sineWave(1.0, this.pitch, 2 * n);
+                this.space = (n) => sineWave(1.0, this.pitch / 2, n);
             }
 
             if (!this.started && !this.data) {
@@ -57,7 +58,7 @@ class WorkletEncoder extends AudioWorkletProcessor {
             }
 
             if (!this.started) {
-                this.buffer = this.buffer.concat(mark(300 * 10));
+                this.buffer = this.buffer.concat(this.mark(300 * 10));
                 this.port.postMessage({ text: 'sending calibration tone for 10 seconds, you may now start recording.\n\n' });
                 this.started = true;
             }
@@ -77,7 +78,9 @@ class WorkletEncoder extends AudioWorkletProcessor {
         bits.push(1);
         bits.push(1);
         
-        const samples = bits.flatMap((bit) => bit ? mark() : space());
+        const samples = bits.flatMap((bit) => (
+            bit ? this.mark(1) : this.space(1)
+        ));
         this.buffer = this.buffer.concat(samples);
         return char;
     }

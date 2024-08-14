@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="index.css">
 <script type="module" src="index.js"></script>
 
-<h1>tumult v1.1.0</h1>
+<h1>tumult v1.1.0-r1</h1>
 <h2>by nycki, 2024</h2>
 
 <p>this is a cassette modem. it modulates and demodulates data to audio using the system microphone and speakers. plug in a recording device like a cassette player!</p>
@@ -16,25 +16,55 @@
 
 <h2>⚠ CAUTION: HARSH NOISE ⚠</h2>
 
+<h2>settings</h2>
+
+<p>
+  <label>
+    baudmode
+    <select id="baudmode">
+      <option value="kcs-300">kcs-300</option>
+      <option value="kcs-1200">kcs-1200 (experimental)</option>
+    </select>
+  </label>
+</p>
+
 <h2>transmit</h2>
-<div>
-    <button id="tx-start">start</button>
-    <button id="tx-stop">stop</button>
-</div>
+
+<!-- <p>
+  <label>
+    output device
+    <select id="tx-select">
+      <option value="default">default</option>
+    </select>
+  </label>
+  <button id="tx-refresh-options">get options</button>
+</p> -->
+
+<p>
+  <button id="tx-start">start</button>
+  <button id="tx-stop">stop</button>
+</p>
+
 <textarea id="tx-outgoing"></textarea>
+
 <textarea id="tx-echo"></textarea>
 
 <h2>receive</h2>
-<div>
-    <button id="rx-start">start</button>
-    <button id="rx-stop">stop</button>
-    <button id="rx-clear">clear</button>
-    <label>
-        input device
-        <select id="rx-select">
-            <option value="default">default</option>
-        </select>
-    </label>
-    <button id="rx-refresh-options">refresh options</button>
-</div>
+
+<p>
+  <label>
+    input device
+    <select id="rx-select">
+      <option value="default">default</option>
+    </select>
+  </label>
+  <button id="rx-refresh-options">get options</button>
+</p>
+
+<p>
+  <button id="rx-start">start</button>
+  <button id="rx-stop">stop</button>
+  <button id="rx-clear">clear</button>
+</p>
+
 <textarea id="rx-incoming"></textarea>

@@ -3,8 +3,8 @@ let txStopCallback = () => {};
 let isReceiving = false;
 let rxStopCallback = () => {};
 let inputOptions = {};
-/** @type {MediaStream | null} */
-let micStream = null;
+/** @type {MediaStream | undefined} */
+let rxDevice;
 
 function main() {
     document.getElementById('tx-start').onclick = txStart;
@@ -25,8 +25,10 @@ async function txStart() {
     const encoder = new AudioWorkletNode(audioContext, 'worklet-encoder');
 
     const txText = document.getElementById('tx-outgoing');
-    encoder.port.postMessage({ data: txText.value });
-    encoder.port.postMessage({ mode: 0 });
+    encoder.port.postMessage({ 
+        baudmode: document.getElementById('baudmode').value,
+        data: txText.value,
+    });
 
     encoder.connect(audioContext.destination);
     document.getElementById('tx-start').disabled = true;
@@ -65,24 +67,28 @@ async function rxStart() {
     if (isReceiving) return;
 
     const rxSelect = document.getElementById('rx-select');
-    if (micStream == null) {
+    if (!rxDevice) {
         await updateInputOptions();
     }
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: {
+    rxDevice = await navigator.mediaDevices.getUserMedia({ audio: {
         echoCancellation: false,
         deviceId: rxSelect.value,
     }});
-    rxSelect.value = micStream.getAudioTracks()[0].getSettings().deviceId;
+    rxSelect.value = rxDevice.getAudioTracks()[0].getSettings().deviceId;
 
     const audioContext = new AudioContext();
-    const micNode = audioContext.createMediaStreamSource(micStream);
+    const micNode = audioContext.createMediaStreamSource(rxDevice);
     const filterNode = new BiquadFilterNode(audioContext, {
         type: 'highpass',
         frequency: '800',
     });
     micNode.connect(filterNode);
+
     await audioContext.audioWorklet.addModule('worklet-decoder.js');
     const decoder = new AudioWorkletNode(audioContext, 'worklet-decoder');
+    decoder.port.postMessage({ 
+        baudmode: document.getElementById('baudmode').value,
+    });
 
     const rxText = document.getElementById('rx-incoming');
     decoder.port.onmessage = (ev) => {
@@ -125,14 +131,13 @@ function rxClear() {
 }
 
 async function updateInputOptions() {
-    if (!micStream) {
+    if (!rxDevice) {
         await navigator.mediaDevices.getUserMedia({ audio: true });
     }
     inputOptions = {};
     const rxSelect = document.getElementById('rx-select');
     rxSelect.innerHTML = '';
     const deviceList = await navigator.mediaDevices.enumerateDevices();
-    console.log(deviceList);
     for (const device of deviceList) {
         if (device.kind !== 'audioinput') continue;
         if (!device.label) continue;
