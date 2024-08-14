@@ -3,10 +3,18 @@ let txStopCallback = () => {};
 let isReceiving = false;
 let rxStopCallback = () => {};
 let deviceInputs = {};
+let deviceOutputs = {};
 /** @type {MediaStream | undefined} */
-let rxDevice;
+let rxStream;
+let canSetSink = true;
 
 function main() {
+    const ctx = new AudioContext();
+    if (!ctx.setSinkId) {
+        canSetSink = false;
+        document.getElementById('tx-select').disabled = true;
+    }
+
     document.getElementById('tx-start').onclick = txStart;
     document.getElementById('tx-stop').onclick = txStop;
     document.getElementById('tx-stop').disabled = true;
@@ -20,7 +28,8 @@ function main() {
 async function txStart() { 
     if (isTransmitting) return;
 
-    const audioContext = new AudioContext();
+    const sinkId = document.getElementById('tx-select').value;
+    const audioContext = new AudioContext({ sinkId });
     await audioContext.audioWorklet.addModule('worklet-encoder.js');
     const encoder = new AudioWorkletNode(audioContext, 'worklet-encoder');
 
@@ -67,17 +76,17 @@ async function rxStart() {
     if (isReceiving) return;
 
     const rxSelect = document.getElementById('rx-select');
-    if (!rxDevice) {
+    if (!rxStream) {
         await getDevices();
     }
-    rxDevice = await navigator.mediaDevices.getUserMedia({ audio: {
+    rxStream = await navigator.mediaDevices.getUserMedia({ audio: {
         echoCancellation: false,
         deviceId: rxSelect.value,
     }});
-    rxSelect.value = rxDevice.getAudioTracks()[0].getSettings().deviceId;
+    rxSelect.value = rxStream.getAudioTracks()[0].getSettings().deviceId;
 
     const audioContext = new AudioContext();
-    const micNode = audioContext.createMediaStreamSource(rxDevice);
+    const micNode = audioContext.createMediaStreamSource(rxStream);
     const filterNode = new BiquadFilterNode(audioContext, {
         type: 'highpass',
         frequency: '800',
@@ -131,19 +140,32 @@ function rxClear() {
 }
 
 async function getDevices() {
-    if (!rxDevice) {
-        await navigator.mediaDevices.getUserMedia({ audio: true });
+    if (!rxStream) {
+        rxStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
+    const deviceList = await navigator.mediaDevices.enumerateDevices();
     deviceInputs = {};
     const rxSelect = document.getElementById('rx-select');
     rxSelect.innerHTML = '';
-    const deviceList = await navigator.mediaDevices.enumerateDevices();
     for (const device of deviceList) {
         if (device.kind !== 'audioinput') continue;
-        if (!device.label) continue;
         const id = device.deviceId;
-        deviceInputs[id] = device.label;
-        rxSelect.innerHTML += `<option value="${id}">${device.label}</option>`;
+        const label = device.label;
+        deviceInputs[id] = device;
+        rxSelect.innerHTML += `<option value="${id}">${label}</option>`;
+    }
+    rxSelect.value = rxStream.getAudioTracks()[0].getSettings().deviceId;
+    
+    if (!canSetSink) return;
+    deviceOutputs = {};
+    const txSelect = document.getElementById('tx-select');
+    txSelect.innerHTML = '';
+    for (const device of deviceList) {
+        if (device.kind !== 'audiooutput') continue;
+        const id = device.deviceId;
+        const label = device.label;
+        deviceOutputs[id] = device;
+        txSelect.innerHTML += `<option value="${id}">${label}</option>`;
     }
 }
 
