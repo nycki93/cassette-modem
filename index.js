@@ -2,7 +2,7 @@ let isTransmitting = false;
 let txStopCallback = () => {};
 let isReceiving = false;
 let rxStopCallback = () => {};
-let inputOptions = {};
+let deviceInputs = {};
 /** @type {MediaStream | undefined} */
 let rxDevice;
 
@@ -14,7 +14,7 @@ function main() {
     document.getElementById('rx-stop').onclick = rxStop;
     document.getElementById('rx-stop').disabled = true;
     document.getElementById('rx-clear').onclick = rxClear;
-    document.getElementById('rx-refresh-options').onclick = updateInputOptions;
+    document.getElementById('get-devices').onclick = getDevices;
 }
 
 async function txStart() { 
@@ -68,7 +68,7 @@ async function rxStart() {
 
     const rxSelect = document.getElementById('rx-select');
     if (!rxDevice) {
-        await updateInputOptions();
+        await getDevices();
     }
     rxDevice = await navigator.mediaDevices.getUserMedia({ audio: {
         echoCancellation: false,
@@ -130,11 +130,11 @@ function rxClear() {
     rxText.value = '';
 }
 
-async function updateInputOptions() {
+async function getDevices() {
     if (!rxDevice) {
         await navigator.mediaDevices.getUserMedia({ audio: true });
     }
-    inputOptions = {};
+    deviceInputs = {};
     const rxSelect = document.getElementById('rx-select');
     rxSelect.innerHTML = '';
     const deviceList = await navigator.mediaDevices.enumerateDevices();
@@ -142,7 +142,7 @@ async function updateInputOptions() {
         if (device.kind !== 'audioinput') continue;
         if (!device.label) continue;
         const id = device.deviceId;
-        inputOptions[id] = device.label;
+        deviceInputs[id] = device.label;
         rxSelect.innerHTML += `<option value="${id}">${device.label}</option>`;
     }
 }

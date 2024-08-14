@@ -20,6 +20,24 @@
 
 <p>
   <label>
+    input device
+    <select id="rx-select">
+      <option value="default">default</option>
+    </select>
+  </label>
+</p>
+<p>
+  <label>
+    output device
+    <select id="tx-select">
+      <option value="default">default</option>
+    </select>
+  </label>
+</p>
+<p><button id="get-devices">get devices</button></p>
+
+<p>
+  <label>
     baudmode
     <select id="baudmode">
       <option value="kcs-300">kcs-300</option>
@@ -29,16 +47,6 @@
 </p>
 
 <h2>transmit</h2>
-
-<!-- <p>
-  <label>
-    output device
-    <select id="tx-select">
-      <option value="default">default</option>
-    </select>
-  </label>
-  <button id="tx-refresh-options">get options</button>
-</p> -->
 
 <p>
   <button id="tx-start">start</button>
@@ -50,16 +58,6 @@
 <textarea id="tx-echo"></textarea>
 
 <h2>receive</h2>
-
-<p>
-  <label>
-    input device
-    <select id="rx-select">
-      <option value="default">default</option>
-    </select>
-  </label>
-  <button id="rx-refresh-options">get options</button>
-</p>
 
 <p>
   <button id="rx-start">start</button>
